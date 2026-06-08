@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint Chaos: Startup Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="title-screen">
+  <div style="height: 60px"></div>
+  <div class="title-sub">Agile Project Management</div>
+  <div style="margin-bottom: 24px; text-align: center;">
+    <label for="player-id" style="color:#94a3b8; font-weight:700; display:block; margin-bottom:8px; font-size:14px; letter-spacing:1px;">ENTER PLAYER NICKNAME</label>
+    <input type="text" id="player-id" placeholder="e.g. agile_ninja_99" style="padding: 12px; border-radius: 8px; border: 2px solid #3b82f6; background: rgba(15,23,42,0.8); color: #f8fafc; font-size: 16px; font-family: 'Nunito'; width: 250px; text-align: center; outline: none;" oninput="checkPlayerId()">
+  </div>
+  <div class="title-menu">
+    <button class="btn btn-primary" id="btn-play" onclick="startSession()" disabled style="opacity: 0.5; cursor: not-allowed;">▶ PLAY</button>
+    <button class="btn btn-secondary" onclick="showHelp()">📖 HOW TO PLAY</button>
+  </div>
+  <div class="title-tip">Deliver tasks · Manage burnout · Ship on time!</div>
+</div>
+
+<div id="map-screen">
+  <div class="map-title">🗺️ SELECT SPRINT</div>
+  <div class="map-grid" id="map-grid"></div>
+  <div style="margin-top:24px; display:flex; gap:12px; justify-content:center;">
+    <button class="btn btn-secondary btn-sm" onclick="goTitle()">🏠 BACK</button>
+    <button class="btn btn-primary btn-sm" onclick="downloadLogs()" style="background:#10b981; border-color:#059669; box-shadow: 0 4px 0 #059669;">⬇️ DOWNLOAD LOGS</button>
+  </div>
+</div>
+
+<div id="game-screen">
+  <div style="position:relative;display:flex;align-items:center;justify-content:center;flex:1;height:100%">
+    <canvas id="gc" width="1100" height="750"></canvas>
+    <div id="stun"></div>
+    <div id="stun-speech"></div>
+    <div id="lvl-ban"><h2 id="lb-t"></h2><p id="lb-s"></p></div>
+    <!-- Tutorial overlay -->
+    <div id="tutorial-overlay">
+      <div id="tutorial-box">
+        <div id="tutorial-icon"></div>
+        <h3 id="tutorial-title"></h3>
+        <p id="tutorial-text"></p>
+        <button class="btn btn-primary btn-sm" id="tutorial-next-btn" onclick="advanceTutorial()">GOT IT ▶</button>
+      </div>
+    </div>
+    <!-- Motivation popup -->
+    <div id="motivation-popup"></div>
+  </div>
+  <div id="hud">
+    <div class="hud-b"><div class="hud-l">Sprint</div><div class="hud-v" id="h-lv">1</div></div>
+    <div class="hud-sep"></div>
+    <div class="hud-b"><div class="hud-l">Score</div><div class="hud-v" id="h-sc">0</div></div>
+    <div class="hud-sep"></div>
+    <div class="hud-b"><div class="hud-l">Combo</div><div class="hud-v combo-v" id="h-co">x1</div></div>
+    <div class="hud-sep"></div>
+    <div class="timer-wrap"><div class="hud-l">Time</div><div class="timer-bar"><div class="timer-fill" id="h-tm"></div></div></div>
+    <div class="hud-sep"></div>
+    <div class="hud-b"><div class="hud-l">Goal</div><div class="hud-v" id="h-gl">0/8</div></div>
+    <div class="hud-sep"></div>
+    <button class="btn btn-secondary btn-sm" onclick="togglePause()" style="padding:4px 8px;font-size:12px;margin:auto 0">⏸ PAUSE</button>
+  </div>
+  <div id="star-tracker"><h3>⭐ LEVEL GOALS</h3><div id="st-list"></div></div>
+  <div id="task-queue"><h3>📋 BACKLOG</h3><div id="tq-list"></div></div>
+  <div id="ctrl">
+    <span class="k">WASD</span> Move <span class="k">SHIFT / J</span> Dash<br>
+    <span class="k">E / K</span> Pick/Drop <span class="k">F / L</span> Cheer<br>
+    <span style="color:#ef4444;font-size:11px">⚠️ Red circle = Needs motivation!</span>
+  </div>
+</div>
+
+<div id="gameover-screen">
+  <div class="go-t" id="go-t">SPRINT COMPLETE!</div>
+  <div class="go-msg" id="go-m"></div>
+  <div class="go-stats" id="go-s"></div>
+  <div class="go-btns">
+    <button class="btn btn-primary btn-sm" id="go-n" onclick="nextLvl()">NEXT ▶</button>
+    <button class="btn btn-secondary btn-sm" onclick="showMap()">🗺️ MAP</button>
+  </div>
+</div>
+
+<!-- Level Intro Modal -->
+<div id="level-popup-modal" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:900;align-items:center;justify-content:center;font-family:'Nunito', sans-serif;">
+  <div style="background:#1e293b;padding:32px;border-radius:16px;max-width:400px;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,0.5);border:2px solid #3b82f6;">
+    <h2 id="lp-title" style="margin:0 0 8px 0;color:#f8fafc;font-family:'Fredoka', sans-serif;font-size:24px;">Level Title</h2>
+    <div id="lp-goal" style="color:#94a3b8;font-size:14px;margin-bottom:16px;">Goal: 8 tasks</div>
+    <p id="lp-desc" style="color:#e2e8f0;font-size:16px;line-height:1.5;margin-bottom:24px;">Intro text goes here...</p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button class="btn btn-secondary btn-sm" onclick="closeLevelPopup()">CANCEL</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmLevelStart()">▶ READY</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pause Modal -->
+<div id="pause-menu" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:950;align-items:center;justify-content:center;font-family:'Nunito', sans-serif;">
+  <div style="background:#1e293b;padding:32px;border-radius:16px;max-width:300px;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,0.5);border:2px solid #3b82f6;">
+    <h2 style="margin:0 0 24px 0;color:#f8fafc;font-family:'Fredoka', sans-serif;font-size:24px;">PAUSED</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <button class="btn btn-primary" onclick="togglePause()">▶ RESUME</button>
+      <button class="btn btn-secondary" onclick="restartLevel()">🔄 RESTART SPRINT</button>
+      <button class="btn btn-secondary" onclick="quitToMap()">🗺️ RETURN TO MAP</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz Modal -->
+<div id="quiz-modal" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.95);z-index:920;align-items:center;justify-content:center;font-family:'Nunito', sans-serif;">
+  <div style="background:#1e293b;padding:32px;border-radius:16px;max-width:500px;text-align:center;box-shadow:0 12px 32px rgba(0,0,0,0.5);border:2px solid #a855f7;">
+    <h2 style="margin:0 0 8px 0;color:#f8fafc;font-family:'Fredoka', sans-serif;font-size:24px;">Daily Standup Quiz 🧠</h2>
+    <p style="color:#94a3b8;font-size:14px;margin-bottom:24px;">Answer this Agile Project Management question to start the sprint!</p>
+    <div id="quiz-q" style="color:#e2e8f0;font-size:18px;font-weight:700;line-height:1.4;margin-bottom:24px;text-align:left;">Question goes here...</div>
+    <div id="quiz-opts" style="display:flex;flex-direction:column;gap:10px;text-align:left;"></div>
+    <div id="quiz-fb" style="display:none;margin-top:20px;padding:16px;border-radius:8px;font-size:14px;line-height:1.4;text-align:left;">
+      <strong id="quiz-fb-t" style="display:block;margin-bottom:8px;font-size:16px;"></strong>
+      <span id="quiz-fb-d">Explanation goes here...</span>
+    </div>
+    <button id="quiz-cont" class="btn btn-primary" style="display:none;margin-top:24px;width:100%;" onclick="startQuizLevel()">▶ START SPRINT</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
